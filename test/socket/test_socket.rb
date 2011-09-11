@@ -320,13 +320,14 @@ class TestSocket < Test::Unit::TestCase
             msg_src.reply rmsg
           }
         }
-
+        no_responses = []
         ip_addrs.each {|ai|
           Addrinfo.udp(ai.ip_address, port).connect {|s|
             msg1 = "<<<#{ai.inspect}>>>"
             s.sendmsg msg1
             unless IO.select([s], nil, nil, 10)
-              raise "no response from #{ai.inspect}"
+              no_responses << ai.inspect
+              next
             end
             msg2, addr = s.recvmsg
             msg2, remote_address, local_address = Marshal.load(msg2)
@@ -334,6 +335,7 @@ class TestSocket < Test::Unit::TestCase
             assert_equal(ai.ip_address, addr.ip_address)
           }
         }
+        raise "\ntried" + ip_addrs.map(&:inspect).join("\n") + "\n, no respose from\n" + no_responses.join("\n") unless no_responses.empty?
       rescue NotImplementedError, Errno::ENOSYS
         skipped = true
         skip "need sendmsg and recvmsg"
