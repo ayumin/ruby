@@ -1144,6 +1144,7 @@ rb_str_length(VALUE str)
 /*
  *  call-seq:
  *     str.bytesize  -> integer
+ *     str.byte_size -> integer
  *
  *  Returns the length of <i>str</i> in bytes.
  */
@@ -4060,8 +4061,11 @@ str_byte_aref(VALUE str, VALUE indx)
 /*
  *  call-seq:
  *     str.byteslice(fixnum)           -> new_str or nil
+ *     str.byte_slice(fixnum)          -> new_str or nil
  *     str.byteslice(fixnum, fixnum)   -> new_str or nil
+ *     str.byte_slice(fixnum, fixnum)  -> new_str or nil
  *     str.byteslice(range)            -> new_str or nil
+ *     str.byte_slice(range)           -> new_str or nil
  *
  *  Byte Reference---If passed a single <code>Fixnum</code>, returns a
  *  substring of one byte at that position. If passed two <code>Fixnum</code>
@@ -7743,6 +7747,7 @@ Init_String(void)
     rb_define_method(rb_cString, "length", rb_str_length, 0);
     rb_define_method(rb_cString, "size", rb_str_length, 0);
     rb_define_method(rb_cString, "bytesize", rb_str_bytesize, 0);
+    rb_define_method(rb_cString, "byte_size", rb_str_bytesize, 0);
     rb_define_method(rb_cString, "empty?", rb_str_empty, 0);
     rb_define_method(rb_cString, "=~", rb_str_match, 1);
     rb_define_method(rb_cString, "match", rb_str_match_m, -1);
@@ -7759,6 +7764,7 @@ Init_String(void)
     rb_define_method(rb_cString, "getbyte", rb_str_getbyte, 1);
     rb_define_method(rb_cString, "setbyte", rb_str_setbyte, 2);
     rb_define_method(rb_cString, "byteslice", rb_str_byteslice, -1);
+    rb_define_method(rb_cString, "byte_slice", rb_str_byteslice, -1);
 
     rb_define_method(rb_cString, "to_i", rb_str_to_i, -1);
     rb_define_method(rb_cString, "to_f", rb_str_to_f, 0);
