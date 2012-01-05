@@ -1976,4 +1976,32 @@ class TestString < Test::Unit::TestCase
 
     assert_equal(u("\x82")+("\u3042"*9), ("\u3042"*10).byteslice(2, 28))
   end
+
+  def test_bytei_slice
+    assert_equal("h", "hello".byte_slice(0))
+    assert_equal(nil, "hello".byte_slice(5))
+    assert_equal("o", "hello".byte_slice(-1))
+    assert_equal(nil, "hello".byte_slice(-6))
+
+    assert_equal("", "hello".byte_slice(0, 0))
+    assert_equal("hello", "hello".byte_slice(0, 6))
+    assert_equal("hello", "hello".byte_slice(0, 6))
+    assert_equal("", "hello".byte_slice(5, 1))
+    assert_equal("o", "hello".byte_slice(-1, 6))
+    assert_equal(nil, "hello".byte_slice(-6, 1))
+    assert_equal(nil, "hello".byte_slice(0, -1))
+
+    assert_equal("h", "hello".byte_slice(0..0))
+    assert_equal("", "hello".byte_slice(5..0))
+    assert_equal("o", "hello".byte_slice(4..5))
+    assert_equal(nil, "hello".byte_slice(6..0))
+    assert_equal("", "hello".byte_slice(-1..0))
+    assert_equal("llo", "hello".byte_slice(-3..5))
+
+    assert_equal(u("\x81"), "\u3042".byte_slice(1))
+    assert_equal(u("\x81\x82"), "\u3042".byte_slice(1, 2))
+    assert_equal(u("\x81\x82"), "\u3042".byte_slice(1..2))
+
+    assert_equal(u("\x82")+("\u3042"*9), ("\u3042"*10).byte_slice(2, 28))
+  end
 end
