@@ -91,6 +91,24 @@ class TestHash < Test::Unit::TestCase
     $VERBOSE = @verbose
   end
 
+  def test_bad_initialize_copy
+    h = Class.new(Hash) {
+      def initialize_copy(h)
+        super(Object.new)
+      end
+    }.new
+    assert_raises(TypeError) { h.dup }
+  end
+
+  def test_dup_will_rehash
+    set1 = { }
+    set2 = { set1 => true}
+
+    set1[set1] = true
+
+    assert_equal set2, set2.dup
+  end
+
   def test_s_AREF
     h = @cls["a" => 100, "b" => 200]
     assert_equal(100, h['a'])
@@ -314,6 +332,15 @@ class TestHash < Test::Unit::TestCase
         end
       end
     end
+  end
+
+  def test_dup_equality
+    h = {'k' => 'v'}
+    assert_equal(h, h.dup)
+    h1 = {h => 1}
+    assert_equal(h1, h1.dup)
+    h[1] = 2
+    assert_equal(h1, h1.dup)
   end
 
   def test_each

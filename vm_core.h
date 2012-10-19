@@ -138,15 +138,37 @@ struct iseq_inline_cache_entry {
     } ic_value;
 };
 
+/* to avoid warning */
+struct rb_thread_struct;
+struct rb_control_frame_struct;
+
 /* rb_call_info_t contains calling information including inline cache */
 typedef struct rb_call_info_struct {
+    /* fixed at compile time */
+    ID mid;
+    VALUE flag;
+    int orig_argc;
+    rb_iseq_t *blockiseq;
+
     /* inline cache: keys */
-    VALUE ic_vmstat;
-    VALUE ic_class;
+    VALUE vmstat;
+    VALUE klass;
 
     /* inline cache: values */
-    rb_method_entry_t *method;
+    const rb_method_entry_t *me;
     VALUE defined_class;
+
+    /* temporary values for method calling */
+    int argc;
+    struct rb_block_struct *blockptr;
+    VALUE recv;
+    union {
+	int opt_pc; /* used by iseq */
+	long index; /* used by ivar */
+	int missing_reason; /* used by method_missing */
+    } aux;
+
+    VALUE (*call)(struct rb_thread_struct *th, struct rb_control_frame_struct *cfp, struct rb_call_info_struct *ci);
 } rb_call_info_t;
 
 #if 1
@@ -367,7 +389,7 @@ typedef struct rb_vm_struct {
 #define VM_DEBUG_BP_CHECK 1
 #endif
 
-typedef struct {
+typedef struct rb_control_frame_struct {
     VALUE *pc;			/* cfp[0] */
     VALUE *sp;			/* cfp[1] */
     rb_iseq_t *iseq;		/* cfp[2] */
@@ -632,14 +654,14 @@ enum vm_check_match_type {
 #define VM_CHECKMATCH_TYPE_MASK   0x03
 #define VM_CHECKMATCH_ARRAY       0x04
 
-#define VM_CALL_ARGS_SPLAT_BIT     (0x01 << 1)
-#define VM_CALL_ARGS_BLOCKARG_BIT  (0x01 << 2)
-#define VM_CALL_FCALL_BIT          (0x01 << 3)
-#define VM_CALL_VCALL_BIT          (0x01 << 4)
-#define VM_CALL_TAILCALL_BIT       (0x01 << 5)
-#define VM_CALL_TAILRECURSION_BIT  (0x01 << 6)
-#define VM_CALL_SUPER_BIT          (0x01 << 7)
-#define VM_CALL_OPT_SEND_BIT       (0x01 << 8)
+#define VM_CALL_ARGS_SPLAT      (0x01 << 1) /* m(*args) */
+#define VM_CALL_ARGS_BLOCKARG   (0x01 << 2) /* m(&block) */
+#define VM_CALL_FCALL           (0x01 << 3) /* m(...) */
+#define VM_CALL_VCALL           (0x01 << 4) /* m */
+#define VM_CALL_TAILCALL        (0x01 << 5) /* located at tail position */
+#define VM_CALL_SUPER           (0x01 << 6) /* super */
+#define VM_CALL_OPT_SEND        (0x01 << 7) /* internal flag */
+#define VM_CALL_ARGS_SKIP_SETUP (0x01 << 8) /* (flag & (SPLAT|BLOCKARG)) && blockiseq == 0 */
 
 enum vm_special_object_type {
     VM_SPECIAL_OBJECT_VMCORE = 1,

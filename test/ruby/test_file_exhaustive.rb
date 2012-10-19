@@ -120,7 +120,7 @@ class TestFileExhaustive < Test::Unit::TestCase
     Dir.mktmpdir do |dir|
       prefix = File.join(dir, "...a")
       Dir.mkdir(prefix)
-      assert_file(:exist?, prefix)
+      assert_file.exist?(prefix)
 
       assert_nothing_raised { File.stat(prefix) }
 
@@ -170,9 +170,9 @@ class TestFileExhaustive < Test::Unit::TestCase
   end
 
   def test_exist_p
-    assert_file(:exist?, @dir)
-    assert_file(:exist?, @file)
-    assert_file_not(:exist?, @nofile)
+    assert_file.exist?(@dir)
+    assert_file.exist?(@file)
+    assert_file.not_exist?(@nofile)
   end
 
   def test_readable_p
@@ -399,8 +399,8 @@ class TestFileExhaustive < Test::Unit::TestCase
 
   def test_rename
     assert_equal(0, File.rename(@file, @nofile))
-    assert_file_not(:exist?, @file)
-    assert_file(:exist?, @nofile)
+    assert_file.not_exist?(@file)
+    assert_file.exist?(@nofile)
     assert_equal(0, File.rename(@nofile, @file))
     assert_raise(Errno::ENOENT) { File.rename(@nofile, @file) }
   end
@@ -772,10 +772,14 @@ class TestFileExhaustive < Test::Unit::TestCase
     s = "foo" + File::SEPARATOR + "bar" + File::SEPARATOR + "baz"
     assert_equal(s, File.join("foo", "bar", "baz"))
     assert_equal(s, File.join(["foo", "bar", "baz"]))
+
     o = Object.new
     def o.to_path; "foo"; end
     assert_equal(s, File.join(o, "bar", "baz"))
     assert_equal(s, File.join("foo" + File::SEPARATOR, "bar", File::SEPARATOR + "baz"))
+  end
+
+  def test_join_alt_separator
     if File::ALT_SEPARATOR == '\\'
       a = "\225\\"
       b = "foo"
@@ -785,23 +789,41 @@ class TestFileExhaustive < Test::Unit::TestCase
     end
   end
 
+  def test_join_ascii_incompatible
+    bug7168 = '[ruby-core:48012]'
+    names = %w"a b".map {|s| s.encode(Encoding::UTF_16LE)}
+    assert_raise(Encoding::CompatibilityError, bug7168) {File.join(*names)}
+    assert_raise(Encoding::CompatibilityError, bug7168) {File.join(names)}
+
+    a = Object.new
+    b = names[1]
+    names = [a, "b"]
+    a.singleton_class.class_eval do
+      define_method(:to_path) do
+        names[1] = b
+        "a"
+      end
+    end
+    assert_raise(Encoding::CompatibilityError, bug7168) {File.join(names)}
+  end
+
   def test_truncate
     assert_equal(0, File.truncate(@file, 1))
-    assert_file(:exist?, @file)
+    assert_file.exist?(@file)
     assert_equal(1, File.size(@file))
     assert_equal(0, File.truncate(@file, 0))
-    assert_file(:exist?, @file)
-    assert_file(:zero?, @file)
+    assert_file.exist?(@file)
+    assert_file.zero?(@file)
     make_file("foo", @file)
     assert_raise(Errno::ENOENT) { File.truncate(@nofile, 0) }
 
     f = File.new(@file, "w")
     assert_equal(0, f.truncate(2))
-    assert_file(:exist?, @file)
+    assert_file.exist?(@file)
     assert_equal(2, File.size(@file))
     assert_equal(0, f.truncate(0))
-    assert_file(:exist?, @file)
-    assert_file(:zero?, @file)
+    assert_file.exist?(@file)
+    assert_file.zero?(@file)
     f.close
     make_file("foo", @file)
 

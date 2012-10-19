@@ -388,7 +388,7 @@ class TestRubyOptions < Test::Unit::TestCase
     rubybin = Regexp.quote(EnvUtil.rubybin)
     pat = Regexp.quote(notexist)
     bug1573 = '[ruby-core:23717]'
-    assert_file_not(:exist?, notexist)
+    assert_file.not_exist?(notexist)
     assert_in_out_err(["-r", notexist, "-ep"], "", [], /.* -- #{pat} \(LoadError\)/, bug1573)
     assert_in_out_err([notexist], "", [], /#{rubybin}:.* -- #{pat} \(LoadError\)/, bug1573)
   end
@@ -577,5 +577,15 @@ class TestRubyOptions < Test::Unit::TestCase
   def test_script_is_directory
     feature2408 = '[ruby-core:26925]'
     assert_in_out_err(%w[.], "", [], /Is a directory -- \./, feature2408)
+  end
+
+  def test_pflag_gsub
+    bug7157 = '[ruby-core:47967]'
+    assert_in_out_err(['-p', '-e', 'gsub(/t.*/){"TEST"}'], %[test], %w[TEST], [], bug7157)
+  end
+
+  def test_pflag_sub
+    bug7157 = '[ruby-core:47967]'
+    assert_in_out_err(['-p', '-e', 'sub(/t.*/){"TEST"}'], %[test], %w[TEST], [], bug7157)
   end
 end

@@ -186,6 +186,14 @@ class TestSyntax < Test::Unit::TestCase
     assert_valid_syntax("def self; :foo; end", __FILE__, bug6403)
   end
 
+  def test_unassignable
+    gvar = global_variables
+    %w[self nil true false __FILE__ __LINE__ __ENCODING__].each do |kwd|
+      assert_raise(SyntaxError) {eval("#{kwd} = nil")}
+      assert_equal(gvar, global_variables)
+    end
+  end
+
   private
 
   def not_label(x) @result = x; @not_label ||= nil end

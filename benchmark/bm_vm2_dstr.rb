@@ -1,8 +1,6 @@
 i = 0
-def m a, b
-end
-
+x = y = 'z'
 while i<6_000_000 # benchmark loop 2
   i += 1
-  m 100, 200
+  str = "foo#{x}bar#{y}baz"
 end

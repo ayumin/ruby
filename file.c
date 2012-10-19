@@ -156,12 +156,22 @@ file_path_convert(VALUE name)
     return name;
 }
 
+static rb_encoding *
+check_path_encoding(VALUE str)
+{
+    rb_encoding *enc = rb_enc_get(str);
+    if (!rb_enc_asciicompat(enc)) {
+	rb_raise(rb_eEncCompatError, "path name must be ASCII-compatible (%s): %"PRIsVALUE,
+		 rb_enc_name(enc), rb_str_inspect(str));
+    }
+    return enc;
+}
+
 static VALUE
 rb_get_path_check(VALUE obj, int level)
 {
     VALUE tmp;
     ID to_path;
-    rb_encoding *enc;
 
     if (insecure_obj_p(obj, level)) {
 	rb_insecure_operation();
@@ -178,13 +188,8 @@ rb_get_path_check(VALUE obj, int level)
     if (obj != tmp && insecure_obj_p(tmp, level)) {
 	rb_insecure_operation();
     }
-    enc = rb_enc_get(tmp);
-    if (!rb_enc_asciicompat(enc)) {
-	tmp = rb_str_inspect(tmp);
-	rb_raise(rb_eEncCompatError, "path name must be ASCII-compatible (%s): %s",
-		 rb_enc_name(enc), RSTRING_PTR(tmp));
-    }
 
+    check_path_encoding(tmp);
     StringValueCStr(tmp);
 
     return rb_str_new4(tmp);
@@ -3389,6 +3394,7 @@ realpath_rec(long *prefixlenp, VALUE *resolvedp, const char *unresolved, VALUE l
 #ifdef HAVE_READLINK
                 if (S_ISLNK(sbuf.st_mode)) {
 		    VALUE link;
+		    volatile VALUE link_orig = Qnil;
 		    const char *link_prefix, *link_names;
                     long link_prefixlen;
                     rb_hash_aset(loopcheck, testpath, ID2SYM(resolving));
@@ -3398,6 +3404,7 @@ realpath_rec(long *prefixlenp, VALUE *resolvedp, const char *unresolved, VALUE l
 		    link_prefixlen = link_names - link_prefix;
 		    if (link_prefixlen > 0) {
 			rb_encoding *enc, *linkenc = rb_enc_get(link);
+			link_orig = link;
 			link = rb_str_subseq(link, 0, link_prefixlen);
 			enc = rb_enc_check(*resolvedp, link);
 			if (enc != linkenc) link = rb_str_conv_enc(link, linkenc, enc);
@@ -3405,6 +3412,7 @@ realpath_rec(long *prefixlenp, VALUE *resolvedp, const char *unresolved, VALUE l
 			*prefixlenp = link_prefixlen;
 		    }
 		    realpath_rec(prefixlenp, resolvedp, link_names, loopcheck, strict, *unresolved_firstsep == '\0');
+		    RB_GC_GUARD(link_orig);
 		    rb_hash_aset(loopcheck, testpath, rb_str_dup_frozen(*resolvedp));
                 }
                 else
@@ -3666,11 +3674,7 @@ rb_file_s_basename(int argc, VALUE *argv)
 
     if (rb_scan_args(argc, argv, "11", &fname, &fext) == 2) {
 	StringValue(fext);
-	enc = rb_enc_get(fext);
-	if (!rb_enc_asciicompat(enc)) {
-	    rb_raise(rb_eEncCompatError, "ascii incompatible character encodings: %s",
-		     rb_enc_name(enc));
-	}
+	enc = check_path_encoding(fext);
     }
     FilePathStringValue(fname);
     if (NIL_P(fext) || !(enc = rb_enc_compatible(fname, fext))) {
@@ -3913,6 +3917,7 @@ rb_file_join(VALUE ary, VALUE sep)
     long len, i;
     VALUE result, tmp;
     const char *name, *tail;
+    int checked = TRUE;
 
     if (RARRAY_LEN(ary) == 0) return rb_str_new(0, 0);
 
@@ -3920,6 +3925,7 @@ rb_file_join(VALUE ary, VALUE sep)
     for (i=0; i<RARRAY_LEN(ary); i++) {
 	tmp = RARRAY_PTR(ary)[i];
 	if (RB_TYPE_P(tmp, T_STRING)) {
+	    check_path_encoding(tmp);
 	    len += RSTRING_LEN(tmp);
 	}
 	else {
@@ -3931,11 +3937,14 @@ rb_file_join(VALUE ary, VALUE sep)
 	len += RSTRING_LEN(sep) * (RARRAY_LEN(ary) - 1);
     }
     result = rb_str_buf_new(len);
+    RBASIC(result)->klass = 0;
     OBJ_INFECT(result, ary);
     for (i=0; i<RARRAY_LEN(ary); i++) {
 	tmp = RARRAY_PTR(ary)[i];
 	switch (TYPE(tmp)) {
 	  case T_STRING:
+	    if (!checked) check_path_encoding(tmp);
+	    StringValueCStr(tmp);
 	    break;
 	  case T_ARRAY:
 	    if (ary == tmp) {
@@ -3951,9 +3960,9 @@ rb_file_join(VALUE ary, VALUE sep)
 	    break;
 	  default:
 	    FilePathStringValue(tmp);
+	    checked = FALSE;
 	}
-	name = StringValueCStr(result);
-	len = RSTRING_LEN(result);
+	RSTRING_GETMEM(result, name, len);
 	if (i == 0) {
 	    rb_enc_copy(result, tmp);
 	}
@@ -3968,6 +3977,7 @@ rb_file_join(VALUE ary, VALUE sep)
 	}
 	rb_str_buf_append(result, tmp);
     }
+    RBASIC(result)->klass = rb_cString;
 
     return result;
 }

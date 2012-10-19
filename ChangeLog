@@ -1,3 +1,466 @@
+Fri Oct 19 16:55:58 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* eval.c, vm_eval.c: use TH_PUSH_TAG() instead of PUSH_TAG().
+
+Fri Oct 19 11:13:55 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* benchmark/driver.rb: remove unexpected `output'.
+	  (commit miss)
+
+Fri Oct 19 10:24:03 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c (vm_search_method): remove needless local variable.
+
+Fri Oct 19 10:22:26 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* benchmark/bmx_temp.rb: removed.
+	  This file should not be in repository.
+
+Fri Oct 19 10:20:10 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* benchmark/driver.rb: add new option `--ruby-arg [ARG]'
+	  which is passed as a launch parameter for each ruby's execution.
+	  ($ ruby [ARG] [File])
+
+Thu Oct 18 18:42:35 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* insns.def (opt_send_simple): move the location of
+	  `opt_send_simple' to the place near `send' definition.
+	  (to take care about icache locality).
+
+Thu Oct 18 18:29:25 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* insns.def (send): remove unused condition.
+	  This condition will be true after r37258.
+
+	* vm_insnhelper.c (vm_caller_setup_args): remove `UNLIKELY' on
+	  checking blockiseq (it seems `LIKELY').
+
+Thu Oct 18 17:31:58 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* insns.def (opt_send_simple): introduce new instruction used
+	  when no need to care about block and splat.
+
+	* compile.c: use the `opt_send_simple' instruction.
+
+Thu Oct 18 16:44:07 2012  Nobuyoshi Nakada  <nobu@ruby-lang.org>
+
+	* vm_method.c (rb_add_method_cfunc, rb_add_method_cfunc_frameless):
+	  check arity earlier at definition time.
+
+Thu Oct 18 15:11:31 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c: add `inline' keyword to several functions.
+	  Compilers (gcc) are conservative than I expected.
+
+Thu Oct 18 15:01:15 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* include/ruby/ruby.h: add a decl. of
+	  `rb_define_frameless_method()'.
+
+Thu Oct 18 14:31:17 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* compile.c (new_callinfo): set a temporary index of callinfo
+	  (used in `iseq_set_sequence()') to rb_call_info_t::aux::index.
+	  rb_call_info_t::argc is initialiesed by same value of
+	  rb_call_info_t::orig_argc.
+
+Thu Oct 18 14:11:08 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* class.c (rb_define_frameless_method): rename from
+	  rb_define_method_fast(). Defined method with this C API
+	  does not make a method frame. It is bit lightweight than
+	  ordinal C functions. Now only 0 or 1 argc are permitted.
+
+	* method.h (VM_METHOD_TYPE_CFUNC_FRAMELESS): rename macro name
+	  from VM_METHOD_TYPE_CFUNC_FAST.
+
+	* vm_insnhelper.c, vm_method.c: rename related functions.
+
+	* proc.c (rb_method_entry_arity): catch up above changes.
+
+Thu Oct 18 10:30:34 2012  Nobuyoshi Nakada  <nobu@ruby-lang.org>
+
+	* parse.y (assignable_gen): fail if yyerror occurred.  fix a bug in
+	  r36973.
+
+Thu Oct 18 09:23:03 2012  Aaron Patterson <aaron@tenderlovemaking.com>
+
+	* hash.c (initialize_copy): duping should rehash the hash.
+
+	* test/ruby/test_hash.rb: added a test to ensure rehash.
+
+Wed Oct 17 21:16:47 2012  Hiroshi Shirosaki  <h.shirosaki@gmail.com>
+
+	* common.mk (WPROGRAM): need same dependencies as PROGRAM.
+
+	* cygwin/GNUmakefile.in (uncommon.mk): move include position
+	  below WPROGRAM definition to be defined in uncommon.mk.
+
+	* ext/extmk.rb (all, static): fix make rubyw.exe failure with make -jN.
+	  If make of ruby.exe and rubyw.exe run in parallel, link dll and link
+	  exe run in parallel, which causes link failure on mingw. To fix this,
+	  we make ruby.exe and rubyw.exe in one make process.
+	  [ruby-core:48007] [Bug #7165]
+
+Wed Oct 17 16:25:34 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* benchmark/bm_vm2_method_missing.rb: add a benchmark to measure
+	  performance of invoking `method_missing'.
+
+Wed Oct 17 16:23:17 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c (vm_getivar): fix to use `aux.index' instead of
+	  `aux.opt_pc'.
+
+Wed Oct 17 16:03:54 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c (vm_call_method_missing): make a refactoring
+	  about method_missing process. Use `vm_call_method()' to invoke
+	  `method_missing' method instead of `rb_funcall2()'.
+	  In `vm_call_method()', set fastpath to `vm_call_method_missing()'
+	  if it can be cached.
+
+	* vm_core.h (rb_call_info_t): add new field
+	  `rb_call_info_t::aux::missing_reason' to pass the reason to
+	  `vm_call_method_missing()'.
+
+Wed Oct 17 15:33:12 2012  Nobuyoshi Nakada  <nobu@ruby-lang.org>
+
+	* configure.in (opt-dir): allow multiple directories separated by
+	  $PATH_SEPARATOR as well as dir_config in mkmf.rb. [ruby-core:47868]
+	  [Bug #7120]
+
+Wed Oct 17 15:08:13 2012  Shugo Maeda  <shugo@ruby-lang.org>
+
+	* lib/net/imap.rb: fix Net::IMAP::ResponseParser to accept
+	  message/delivery-status ([ruby-core:47920] [Bug #7146]),
+	  message/rfc822 attachments ([ruby-core:47921] [Bug #7147]), and
+	  (BODY ("MIXED")) ([ruby-core:47951] [Bug #7153]).
+	  patched by Tony Arkles.
+
+	* test/net/imap/test_imap_response_parser.rb: related test.
+
+Wed Oct 17 11:04:48 2012  NAKAMURA Usaku  <usa@ruby-lang.org>
+
+	* test/ruby/test_hash.rb (TestHash#test_dup_equality): added a new test
+	  to show the problem of r37232.
+
+Wed Oct 17 10:48:40 2012  Shugo Maeda  <shugo@ruby-lang.org>
+
+	* vm_insnhelper.c (vm_search_method): fix a build error that occurs
+	  when OPT_INLINE_METHOD_CACHE is 0.
+
+Wed Oct 17 08:46:47 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* benchmark/bm_vm2_dstr.rb: add a benchmark to measure
+	  performance of dynamic generated string ("foo#{bar}baz").
+
+Wed Oct 17 08:32:46 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* compile.c (compile_dstr_fragments): use `putobject' instead of
+	  `putstring' for all of strings used by NODE_DSTR because
+	  ruby users can not grab this string.
+	  For example, the string object of "baz" in "foo#{bar}baz"
+	  is located by `putobject' (users can not touch "baz" object
+	  directly). This change reduces GC pressure.
+	  This improvement is suggested by Aaron Patterson.
+
+Wed Oct 17 08:02:57 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* thread.c (rb_threadptr_interrupt_mask): fix to check interrupt
+	  after interrupt_mask changed.
+
+Wed Oct 17 06:42:47 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c (vm_call_method): fix to return value immediately.
+	  Remove CHECK_INTS() after that method dispatch.
+
+Wed Oct 17 06:25:56 2012  Aaron Patterson <aaron@tenderlovemaking.com>
+
+	* hash.c (initialize_copy): copy the underlying st_table on dup,
+	  rather than copying the hash key by key. [ruby-core:48009]
+
+	* test/ruby/test_hash.rb: relevant tests for initialize_copy
+
+Wed Oct 17 06:17:44 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c (vm_call_iseq_setup_2): separate tailcall and normal
+	  method frame setup functions.
+	  Add checking interrupts at the tailcall setup function.
+
+Wed Oct 17 05:35:37 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* benchmark/bm_vm1_yield.rb: add a benchmark to measure `yield'
+	  (invoke empty block) performance.
+
+	* benchmark/bm_vm2_method_with_block.rb: add a benchmark to measure
+	  method invocation with empty block.
+
+Wed Oct 17 05:05:07 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c (vm_invoke_block): vm_caller_setup_args() can skip
+	  when splat flag is not set.
+
+Wed Oct 17 01:53:47 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c (vm_getivar, vm_setivar): support index inline cache
+	  with rb_call_info_t to speedup `attr' getter and setter.
+	  Cached index is stored in rb_call_info_t::aux::index.
+	  `index' == 0 means not cached. `index' > 0 means cached and cached
+	  index is `index - 1'.
+
+	* insns.def ((get|set)instancevariable): use new wrapper functions
+	  vm_(get|set)instancevariable() defined in vm_insnhelper.c.
+
+	* vm_core.h (rb_call_info_t::aux): introduce new union data because
+	  opt_pc can share with index.
+
+Tue Oct 16 22:24:44 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* benchmark/driver.rb (show_results): Show speedup ratio
+	  with first executables score at last of results
+	  if two or more executrables are given.
+
+Tue Oct 16 21:59:01 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* benchmark/driver.rb: some refactoring.
+	  (1) Remove `average differential'.
+	      In this benchmark driver, We should not care about `average'.
+	      We use fastest score because this score should not include
+	      any disturbances (affections of background process, etc).
+	      If you care about timing affect, I recommend `median'
+	      score with more than 5 examinations rather than simple
+	      `average' score (`average' score was affected by error scores).
+	  (2) Show log file name.
+	  (3) Change default directory from './' to driver's directory.
+
+Tue Oct 16 14:56:23 2012  Nobuyoshi Nakada  <nobu@ruby-lang.org>
+
+	* file.c (rb_file_join): need to check again after any conversion run.
+	  [ruby-core:48012] [Bug #7168]
+
+Tue Oct 16 12:52:14 2012  Kazuhiro NISHIYAMA  <zn@mbf.nifty.com>
+
+	* test/ruby/envutil.rb (Test::Unit::Assertions#assert_file):
+	  rename from file_assertion.
+
+Tue Oct 16 11:30:18 2012  Nobuyoshi Nakada  <nobu@ruby-lang.org>
+
+	* file.c (rb_file_join): hide the result under construction until
+	  return.
+
+	* file.c (rb_file_join): check nul-byte only for strings, since
+	  FilePathStringValue() does it.  [ruby-core:48012] [Bug #7168]
+
+	* file.c (rb_file_join): path names must be ASCII-compatible.
+	  [ruby-core:48012] [Bug #7168]
+
+	* file.c (check_path_encoding): new function to ensure path name
+	  encoding to be ASCII-compatible.
+
+Tue Oct 16 09:40:04 2012  NAKAMURA Usaku  <usa@ruby-lang.org>
+
+	* test/ruby/test_regexp.rb
+	  (TextRegexp#test_raw_hyphen_and_tk_char_type_after_range): use
+	  Regexp.new instead of literal to ignore a parser warning.
+
+Tue Oct 16 09:30:30 2012  NAKAMURA Usaku  <usa@ruby-lang.org>
+
+	* test/ruby/test_regexp.rb
+	  (TextRegexp#test_raw_hyphen_and_tk_char_type_after_range): ignoring
+	  warnings are already set in setup method.
+
+Tue Oct 16 06:44:06 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c (VM_CALLEE_SETUP_ARG): fix wrong condition.
+
+Tue Oct 16 06:29:18 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c (vm_call_method): disable CI_SET_FASTPATH() if
+	  this method call needs splat argument because cached functions
+	  (vm_call_attrset, vm_call_ivar, vm_call_cfunc_fast_(unary|binary))
+	  do not check an arity.
+
+	* bootstraptest/test_method.rb: add a test to check an above issue.
+
+Tue Oct 16 06:15:44 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* method.h: introduce new method type VM_METHOD_TYPE_CFUNC_FAST.
+	  This method is similar to VM_METHOD_TYPE_CFUNC methods, but
+	  called cfunc without building new frame (does not push new control
+	  frame). If error is occurred in cfunc, the backtrace only shows
+	  caller frame and upper.
+	  This kind of methods can be added by rb_define_method_fast().
+	  This feature is similar to specialized instructions (opt_plus, etc),
+	  but more flexible (but a bit slower).
+
+	* class.c (rb_define_method_fast): added.
+	  Maybe it will be renamed soon.
+
+	* vm_insnhelper.c (vm_call_method): support method type
+	  VM_METHOD_TYPE_CFUNC_FAST.
+
+	* proc.c (rb_method_entry_arity): catch up new method type.
+
+	* vm_method.c (rb_add_method_cfunc_fast): added.
+
+Tue Oct 16 02:32:29 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.h (CI_SET_FASTPATH): add new parameter `enabled'.
+	  If `enable' is 0 then CI_SET_FASTPATH() doesn't work.
+	  And add new configuration option OPT_CALL_FASTPATH. If this macro
+	  was defined by 0, then CI_SET_FASTPATH() doesn't work any more.
+
+	* vm_insnhelper.c (vm_call_method): Pass `0' for `enabled' parameter
+	  of CI_SET_FASTPATH if this method is protected.
+
+Tue Oct 16 02:17:35 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_core.h (VM_CALL_*): rename VM_CALL_*_BIT
+	  to VM_CALL_* (remove `_BIT' suffix).
+	  Add comments on each macros.
+	  Remove unused macro VM_CALL_TAILRECURSION_BIT.
+
+	* compile.c, iseq.c, insns.def, vm_insnhelper.c: ditto.
+
+Mon Oct 15 22:14:44 2012  Nobuyoshi Nakada  <nobu@ruby-lang.org>
+
+	* test/ruby/envutil.rb (Test::Unit::Assertions#file_assertion):
+	  rewrite file assertions.
+
+Mon Oct 15 09:41:17 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c (VM_CALLEE_SETUP_ARG): skip CI_SET_FASTPATH() if
+	  it was called from vm_yield_setup_args().
+
+Mon Oct 15 05:20:13 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.h CI_SET_FASTPATH: introduce new macro
+	  `CI_SET_FASTPATH(ci, func)'. This macro set `ci->call' as `func'.
+	  `func' (ci->call) is called at the last of `send'
+	  (and `invokesuper') instruction.
+	  `CI_SET_FASTPATH' does not set `ci->call' when the method
+	  (stored in `ci->me') is `protected'.
+
+	* vm_insnhelper.c (vm_call_method): use `CI_SET_FASTPATH'.
+	  After several checking (visibility, argc checking), the result of
+	  checking can be reused until re-definition of this method
+	  with inline method cache.
+
+	  Note that this optimization is now experimental.
+	  If you find any problem about it, please tell us.
+
+Mon Oct 15 04:51:55 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_insnhelper.c: refactoring.
+	  - move all `call' related functions to the last of file.
+	  - make functions for respective method types in vm_call_method().
+	    (all functions have same function parameters)
+
+	* vm_core.h: add `opt_pc' field in `rb_call_info_t'
+	  as temporal variable.
+
+	* vm_eval.c (vm_call0_body): catch up above changes.
+
+Mon Oct 15 03:51:46 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* benchmark/bm_vm1_attr_ivar(_set).rb: added (for method dispatch speed).
+
+	* benchmark/bm_vm1_float_simple.rb: added (for flonum/float).
+
+Mon Oct 15 02:51:16 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* vm_eval.c (vm_call0_body): add new function.
+	  `vm_call0()' makes call_info struct and calls `vm_call0_body()'
+	  with this struct. In near future, `vm_call0()' will be removed
+	  because all of `vm_call0()' users setup call_info struct by itself.
+
+Mon Oct 15 01:38:06 2012  Koichi Sasada  <ko1@atdot.net>
+
+	* insns.def (send, invokesuper, invokeblock, opt_*), vm_core.h:
+	  use only a `ci' (rb_call_info_t) parameter instead of using
+	  parameters such as `op_id', 'op_argc', `blockiseq' and flag.
+	  These information are stored in rb_call_info_t at the compile
+	  time.
+	  This technique simplifies parameter passing at related
+	  function calls (~10% speedups for simple method invocation at
+	  my machine).
+	  `rb_call_info_t' also has new function pointer variable `call'.
+	  This `call' variable enables to customize method (block)
+	  invocation process for each place. However, it always call
+	  `vm_call_general()' at this changes.
+	  `rb_call_info_t' also has temporary variables for method
+	  (block) invocation.
+
+	* vm_core.h, compile.c, insns.def: introduce VM_CALL_ARGS_SKIP_SETUP
+	  VM_CALL macro.  This flag indicates that this call can skip
+	  caller_setup (block arg and splat arg).
+
+	* compile.c: catch up above changes.
+
+	* iseq.c: catch up above changes (especially for TS_CALLINFO).
+
+	* tool/instruction.rb: catch up above changes.
+
+	* vm_insnhelper.c, vm_insnhelper.h: ditto. Macros and functions
+	  parameters are changed.
+
+	* vm_eval.c (vm_call0): ditto (it will be rewritten soon).
+
+Sun Oct 14 12:30:44 2012  Nobuyoshi Nakada  <nobu@ruby-lang.org>
+
+	* ruby.c (rb_f_sub, rb_f_gsub): pass the given block.
+	  [ruby-core:47967] [Bug #7157]
+
+Sat Oct 13 23:15:39 2012  NAKAMURA Usaku  <usa@ruby-lang.org>
+
+	* regparse.c (parse_char_class): should match with a hyphen after a
+	  range in a character class.
+
+	* test/ruby/test_regexp.rb (TestRegexp#test_char_class): fixed wrong
+	  test.
+
+	* test/ruby/test_regexp.rb (TestRegexp#check): now can accept the
+	  error message.
+
+	* test/ruby/test_regexp.rb
+	  (TextRegexp#test_raw_hyphen_and_tk_char_type_after_range): renamed
+	  because the previous name was wrong.
+
+	* test/ruby/test_regexp.rb
+	  (TextRegexp#test_raw_hyphen_and_tk_char_type_after_range): added
+	  more test pattern.
+
+Sat Oct 13 03:01:53 2012  Nobuyoshi Nakada  <nobu@ruby-lang.org>
+
+	* file.c (realpath_rec): prevent link from GC while link_names refers
+	  the content.
+
+Sat Oct 13 01:37:48 2012  NAKAMURA Usaku  <usa@ruby-lang.org>
+
+	* test/ruby/test_regexp.rb
+	  (TestRegexp#test_raw_hyphen_and_type_char_after_range): added new
+	  test. ref [ruby-core:47115] [Backport #6853]
+
+Fri Oct 12 21:55:08 2012  Hiroshi Shirosaki  <h.shirosaki@gmail.com>
+
+	* include/ruby/win32.h (rb_w32_pow): set floating point precision
+	  for mingw-w64 x86 pow(). This improves the precision of pow() on
+	  Windows XP for TestFloat#test_round_with_precision failure.
+	  [ruby-core:47911] [Bug #7142]
+
+Fri Oct 12 21:37:25 2012  Hiroshi Shirosaki  <h.shirosaki@gmail.com>
+
+	* test/webrick/test_cgi.rb (TestWEBrickCGI#test_cgi): skip a test
+	  depending on locale on Windows. ENV[] doesn't work properly if
+	  console code page is not equal to file system encoding.
+	  [ruby-core:47910] [Bug #7140]
+
+Fri Oct 12 20:40:29 2012  Tanaka Akira  <akr@fsij.org>
+
+	* process.c (posix_sh_cmds): the command name of colon is ":".
+
 Fri Oct 12 18:18:03 2012  Nobuyoshi Nakada  <nobu@ruby-lang.org>
 
 	* file.c (rb_get_path_check): path name must not contain NUL bytes.
@@ -58,7 +521,7 @@ Tue Oct  9 18:01:37 2012  Nobuyoshi Nakada  <nobu@ruby-lang.org>
 	  precision of long may be larger than double.
 
 	* random.c (rb_random_ulong_limited): new function to return a random
-	  value from 0 upto limit as unsigned long, simillary to
+	  value from 0 upto limit as unsigned long, similarly to
 	  rb_genrand_ulong_limited but with arbitrary RNG object.
 
 Tue Oct  9 17:13:27 2012  Nobuyoshi Nakada  <nobu@ruby-lang.org>

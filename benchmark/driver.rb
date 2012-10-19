@@ -76,6 +76,7 @@ class BenchmarkDriver
     @verbose = opt[:quiet] ? false : (opt[:verbose] || false)
     @output = opt[:output] ? open(opt[:output], 'w') : nil
     @loop_wl1 = @loop_wl2 = nil
+    @ruby_arg = opt[:ruby_arg] || nil
     @opt = opt
 
     # [[name, [[r-1-1, r-1-2, ...], [r-2-1, r-2-2, ...]]], ...]
@@ -90,8 +91,27 @@ class BenchmarkDriver
     end
   end
 
-  def average results
-    results.inject(:+) / results.length
+  def adjusted_results name, results
+    s = nil
+    results.each_with_index{|e, i|
+      r = e.min
+      case name
+      when /^vm1_/
+        if @loop_wl1
+          r -= @loop_wl1[i]
+          r = 0 if r < 0
+          s = '*'
+        end
+      when /^vm2_/
+        if @loop_wl2
+          r -= @loop_wl2[i]
+          r = 0 if r < 0
+          s = '*'
+        end
+      end
+      yield r
+    }
+    s
   end
 
   def show_results
@@ -113,42 +133,41 @@ class BenchmarkDriver
       output "minimum results in each #{@repeat} measurements."
     end
 
-    difference = "\taverage difference" if @execs.length == 2
-    total_difference = 0
-
-    output "name\t#{@execs.map{|(_, v)| v}.join("\t")}#{difference}"
+    output "Execution time (sec)"
+    output "name\t#{@execs.map{|(_, v)| v}.join("\t")}"
     @results.each{|v, result|
       rets = []
-      s = nil
-      result.each_with_index{|e, i|
-        r = e.min
-        case v
-        when /^vm1_/
-          if @loop_wl1
-            r -= @loop_wl1[i]
-            s = '*'
-          end
-        when /^vm2_/
-          if @loop_wl2
-            r -= @loop_wl2[i]
-            s = '*'
-          end
-        end
+      s = adjusted_results(v, result){|r|
         rets << sprintf("%.3f", r)
       }
-
-      if difference
-        diff = average(result.last) - average(result.first)
-        total_difference += diff
-        rets << sprintf("%.3f", diff)
-      end
-
       output "#{v}#{s}\t#{rets.join("\t")}"
     }
 
-    if difference and @verbose
-      output '-----------------------------------------------------------'
-      output "average total difference is #{total_difference}"
+    if @execs.size > 1
+      output
+      output "Speedup ratio comare with the result of `#{@execs[0]}' (greater is better)"
+      output "name\t#{@execs[1..-1].map{|(_, v)| v}.join("\t")}"
+      @results.each{|v, result|
+        rets = []
+        first_value = nil
+        s = adjusted_results(v, result){|r|
+          if first_value
+            if r == 0
+              rets << sprintf("%.3f", "Error")
+            else
+              rets << sprintf("%.3f", first_value/r)
+            end
+          else
+            first_value = r
+          end
+        }
+        output "#{v}#{s}\t#{rets.join("\t")}"
+      }
+    end
+
+    if @opt[:output]
+      output
+      output "Log file: #{@opt[:output]}"
     end
   end
 
@@ -217,7 +236,8 @@ class BenchmarkDriver
   end
 
   def measure executable, file
-    cmd = "#{executable} #{file}"
+    cmd = "#{executable} #{@ruby_arg} #{file}"
+
     m = Benchmark.measure{
       `#{cmd}`
     }
@@ -234,7 +254,7 @@ end
 if __FILE__ == $0
   opt = {
     :execs => ['ruby'],
-    :dir => './',
+    :dir => File.dirname(__FILE__),
     :repeat => 1,
     :output => "bmlog-#{Time.now.strftime('%Y%m%d-%H%M%S')}.#{$$}",
   }
@@ -255,6 +275,9 @@ if __FILE__ == $0
     }
     o.on('-o', '--output-file [FILE]', "Output file"){|f|
       opt[:output] = f
+    }
+    o.on('--ruby-arg [ARG]', "Optional argument for ruby"){|a|
+      opt[:ruby_arg] = a
     }
     o.on('-q', '--quiet', "Run without notify information except result table."){|q|
       opt[:quiet] = q
