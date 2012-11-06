@@ -76,6 +76,14 @@ class TestEnumerator < Test::Unit::TestCase
     assert_raise(TypeError) { e.dup }
   end
 
+  def test_initialize_with_block
+    # あとでかく
+  end
+
+  def test_initialize_with_args_and_block
+    # あとでかく
+  end
+
   def test_gc
     assert_nothing_raised do
       1.times do
