@@ -371,7 +371,7 @@ module WEBrick
         str.split(/[&;]/).each{|x|
           next if x.empty?
           key, val = x.split(/=/,2)
-          key = unescape_form(key)
+          key = unescape(key)
           val = unescape_form(val.to_s)
           val = FormData.new(val)
           val.name = key

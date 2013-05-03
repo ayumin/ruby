@@ -93,4 +93,17 @@ class TestWEBrickHTTPUtils < Test::Unit::TestCase
     assert_equal("/foo/bar/", escape_path("/foo/bar/"))
     assert_equal("/%25foo/bar/", escape_path("/%foo/bar/"))
   end
+
+  def test_parse_query
+    assert_equal({"foo" => ""}, parse_query("foo"))
+    assert_equal({"foo" => "bar"}, parse_query("foo=bar"))
+    assert_equal({"foo" => "", "bar"  => ""}, parse_query("foo&bar"))
+    assert_equal({"foo" => "", "bar"  => ""}, parse_query("foo;bar"))
+    assert_equal({"foo" => "bar", "bar" => "baz"}, parse_query("foo=bar&bar=baz"))
+    assert_equal({"foo" => "bar", "bar" => "baz"}, parse_query("foo=bar;bar=baz"))
+
+    bug8330 = '[ruby-core:54601]'
+    assert_equal({"foo+bar" => ""}, parse_query("foo+bar"))
+    assert_equal({"foo+bar" => "baz"}, parse_query("foo+bar=baz"))
+  end
 end
