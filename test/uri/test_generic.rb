@@ -144,6 +144,12 @@ class URI::TestGeneric < Test::Unit::TestCase
     assert_equal(nil, url.user)
     assert_equal(nil, url.password)
     assert_equal(nil, url.userinfo)
+
+    # 10
+    bug6386 = '[ruby-core:44779]'
+    assert_raise(URI::InvalidURIError) { URI.parse('http:/foo/') }
+    assert_raise(URI::InvalidURIError) { URI.parse('ftp:/foo/') }
+    assert_raise(URI::InvalidURIError) { URI.parse('ssh:/foo/') }
   end
 
   def test_merge
