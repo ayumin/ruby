@@ -2436,8 +2436,8 @@ sort_2(const void *ap, const void *bp, void *dummy)
  *  or using an optional code block.
  *
  *  The block must implement a comparison between +a+ and +b+, and return
- *  +-1+, when +a+ follows +b+, +0+ when +a+ and +b+ are equivalent, or ++1+
- *  if +b+ follows +a+.
+ *  +-1+, when +a+ is less than +b+, +0+ when +a+ and +b+ are equivalent,
+ *  or ++1+, if +a+ is greater than +b+.
  *
  *  See also Enumerable#sort_by.
  *
@@ -2517,8 +2517,8 @@ rb_ary_sort_bang(VALUE ary)
  *  or using an optional code block.
  *
  *  The block must implement a comparison between +a+ and +b+, and return
- *  +-1+, when +a+ follows +b+, +0+ when +a+ and +b+ are equivalent, or ++1+
- *  if +b+ follows +a+.
+ *  +-1+, when +a+ is less than +b+, +0+ when +a+ and +b+ are equivalent,
+ *  or ++1+, if +a+ is greater than +b+.
  *
  *
  *  See also Enumerable#sort_by.
